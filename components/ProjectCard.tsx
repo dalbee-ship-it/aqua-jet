@@ -172,46 +172,34 @@ export function ProjectCard({
             </div>
 
             {project.tasks.length > 0 && (() => {
-              // 우선순위: running → queued(최신순) → done
               const sorted = [...project.tasks].sort((a, b) => {
                 const order = { running: 0, queued: 1, failed: 2, done: 3 }
                 return (order[a.status as keyof typeof order] ?? 9) - (order[b.status as keyof typeof order] ?? 9)
               })
               const topTask = sorted[0]
-              const displayTasks = expanded ? sorted : [topTask]
-              const remaining = project.tasks.filter(t => t.status !== 'done').length
-
+              // 닫힌 상태: 최우선 태스크 1개만
               return (
                 <ul className="mt-1.5 space-y-0.5">
-                  {displayTasks.map(task => (
-                    <li
-                      key={task.id}
-                      className="flex items-center gap-1.5 ui-sans"
-                      style={{ fontSize: '0.75rem' }}
-                    >
-                      {task.status === 'running' ? (
-                        <span className="flex-shrink-0 text-cyan-400 animate-pulse text-xs">▶</span>
-                      ) : (
-                        <span
-                          className={`flex-shrink-0 inline-flex items-center justify-center rounded-[3px] border transition-colors`}
-                          style={{
-                            width: '12px', height: '12px', fontSize: '9px', lineHeight: 1,
-                            borderColor: task.status === 'done' ? '#4ade80' : 'var(--border-hover)',
-                            background: task.status === 'done' ? '#4ade80' : 'transparent',
-                            color: task.status === 'done' ? '#000' : 'transparent',
-                          }}
-                        >
-                          {task.status === 'done' ? '✓' : ''}
-                        </span>
-                      )}
-                      <span className={`truncate ${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
-                        {task.title}
+                  <li className="flex items-center gap-1.5 ui-sans" style={{ fontSize: '0.75rem' }}>
+                    {topTask.status === 'running' ? (
+                      <span className="flex-shrink-0 text-cyan-400 animate-pulse text-xs">▶</span>
+                    ) : (
+                      <span
+                        className="flex-shrink-0 inline-flex items-center justify-center rounded-[3px] border"
+                        style={{
+                          width: '12px', height: '12px', fontSize: '9px', lineHeight: 1,
+                          borderColor: topTask.status === 'done' ? '#4ade80' : 'var(--border-hover)',
+                          background: topTask.status === 'done' ? '#4ade80' : 'transparent',
+                          color: topTask.status === 'done' ? '#000' : 'transparent',
+                        }}
+                      >
+                        {topTask.status === 'done' ? '✓' : ''}
                       </span>
-                    </li>
-                  ))}
-                  {!expanded && remaining > 1 && (
-                    <li className="text-muted ui-sans" style={{ fontSize: '0.7rem' }}>+{remaining - 1}개 남음</li>
-                  )}
+                    )}
+                    <span className={`truncate ${topTask.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
+                      {topTask.title}
+                    </span>
+                  </li>
                 </ul>
               )
             })()}
@@ -219,15 +207,53 @@ export function ProjectCard({
         </div>
       </div>
 
-      {/* 펼쳐진 영역 */}
+      {/* 펼쳐진 영역 — 스크롤 통합 */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="max-h-72 overflow-y-auto" style={{ borderTop: '1px solid var(--border)' }}>
+          {/* 태스크 전체 */}
+          {project.tasks.length > 0 && (() => {
+            const sorted = [...project.tasks].sort((a, b) => {
+              const order = { running: 0, queued: 1, failed: 2, done: 3 }
+              return (order[a.status as keyof typeof order] ?? 9) - (order[b.status as keyof typeof order] ?? 9)
+            })
+            return (
+              <ul className="px-4 pt-3 pb-2 space-y-1.5">
+                {sorted.map(task => (
+                  <li key={task.id} className="flex items-center gap-2 ui-sans" style={{ fontSize: '0.8rem' }}>
+                    {task.status === 'running' ? (
+                      <span className="flex-shrink-0 text-cyan-400 animate-pulse" style={{ fontSize: '0.7rem' }}>▶</span>
+                    ) : (
+                      <span
+                        className="flex-shrink-0 inline-flex items-center justify-center rounded-[3px] border"
+                        style={{
+                          width: '13px', height: '13px', fontSize: '9px', lineHeight: 1,
+                          borderColor: task.status === 'done' ? '#4ade80' : 'var(--border-hover)',
+                          background: task.status === 'done' ? '#4ade80' : 'transparent',
+                          color: task.status === 'done' ? '#000' : 'transparent',
+                        }}
+                      >
+                        {task.status === 'done' ? '✓' : ''}
+                      </span>
+                    )}
+                    <span className={`${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
+                      {task.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )
+          })()}
+
+          {/* 구분선 */}
+          {logs.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--border)', margin: '0 16px' }} />
+          )}
+
           {/* 로그 타임라인 */}
-          <div className="px-4 py-3 space-y-2 max-h-56 overflow-y-auto">
+          <div className="px-4 pt-2 pb-3 space-y-1">
             {logs.length === 0
               ? <p className="ui-sans text-xs text-muted italic">아직 기록이 없어요.</p>
               : (() => {
-                  // 날짜 그룹핑
                   const groups: { label: string; items: Log[] }[] = []
                   let lastLabel = ''
                   for (const log of logs) {
@@ -241,7 +267,7 @@ export function ProjectCard({
                   }
                   return groups.map(g => (
                     <div key={g.label}>
-                      <div className="ui-sans text-xs text-muted mb-1 mt-2 first:mt-0 select-none" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
+                      <div className="ui-sans text-muted mb-1 mt-2 first:mt-0 select-none" style={{ fontSize: '0.62rem', letterSpacing: '0.05em' }}>
                         — {g.label}
                       </div>
                       {g.items.map(log => (
@@ -260,10 +286,6 @@ export function ProjectCard({
             }
             <div ref={bottomRef} />
           </div>
-
-
-
-
         </div>
       )}
     </div>
