@@ -60,8 +60,6 @@ export function ProjectCard({
   const expanded = expandedId === project.id
   const [hovered, setHovered] = useState(false)
   const [logs, setLogs] = useState<Log[]>([])
-  const [input, setInput] = useState('')
-  const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const runningCount = project.tasks.filter(t => t.status === 'running').length
 
@@ -93,19 +91,6 @@ export function ProjectCard({
       body: JSON.stringify({ status }),
     })
     onUpdate()
-  }
-
-  async function sendLog(e: React.FormEvent) {
-    e.preventDefault()
-    if (!input.trim()) return
-    setSending(true)
-    await fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_id: project.id, message: input.trim(), type: 'user' }),
-    })
-    setInput('')
-    setSending(false)
   }
 
   return (
@@ -189,21 +174,7 @@ export function ProjectCard({
             <div ref={bottomRef} />
           </div>
 
-          {/* 입력창 */}
-          <form onSubmit={sendLog} className="flex gap-2 px-4 pb-3">
-            <input
-              className="input flex-1"
-              placeholder="메모 또는 명령..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              disabled={sending}
-            />
-            <button
-              type="submit"
-              disabled={sending || !input.trim()}
-              className="ui-sans bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-black font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer text-sm"
-            >→</button>
-          </form>
+
 
 
         </div>
