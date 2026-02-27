@@ -1,5 +1,6 @@
 'use client'
 import { PokemonSprite } from './PokemonSprite'
+import { ProjectMenu } from './ProjectMenu'
 
 interface Task {
   id: string
@@ -31,7 +32,7 @@ const STATUS_COLOR: Record<string, string> = {
   failed: 'text-red-400',
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({ project, onUpdate }: { project: Project; onUpdate: () => void }) {
   const runningCount = project.tasks.filter(t => t.status === 'running').length
 
   return (
@@ -49,6 +50,7 @@ export function ProjectCard({ project }: { project: Project }) {
               <span className="text-xs text-cyan-400 italic animate-pulse">{runningCount} running</span>
             )}
             <span className="text-xs text-gray-400">{project.progress}%</span>
+            <ProjectMenu projectId={project.id} currentStatus={project.status} onUpdate={onUpdate} />
           </div>
         </div>
 

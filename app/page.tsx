@@ -44,6 +44,8 @@ export default function Dashboard() {
 
   const active = projects.filter(p => p.status === 'active')
   const done = projects.filter(p => p.status === 'done')
+  const paused = projects.filter(p => p.status === 'paused')
+  const archived = projects.filter(p => p.status === 'archived' || p.status === 'abandoned')
 
   return (
     <main className="min-h-screen bg-gray-950">
@@ -67,7 +69,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-3">
-            {active.map(p => <ProjectCard key={p.id} project={p} />)}
+            {active.map(p => <ProjectCard key={p.id} project={p} onUpdate={() => fetchProjects().then(setProjects)} />)}
           </div>
         )}
 
@@ -77,7 +79,29 @@ export default function Dashboard() {
               POKÉDEX <span className="text-green-400">({done.length})</span>
             </h2>
             <div className="space-y-3">
-              {done.map(p => <ProjectCard key={p.id} project={p} />)}
+              {done.map(p => <ProjectCard key={p.id} project={p} onUpdate={() => fetchProjects().then(setProjects)} />)}
+            </div>
+          </>
+        )}
+
+        {paused.length > 0 && (
+          <>
+            <h2 className="text-xs text-gray-500 tracking-widest mt-10 mb-4">
+              PAUSED <span className="text-yellow-400">({paused.length})</span>
+            </h2>
+            <div className="space-y-3 opacity-60">
+              {paused.map(p => <ProjectCard key={p.id} project={p} onUpdate={() => fetchProjects().then(setProjects)} />)}
+            </div>
+          </>
+        )}
+
+        {archived.length > 0 && (
+          <>
+            <h2 className="text-xs text-gray-500 tracking-widest mt-10 mb-4">
+              ARCHIVED <span className="text-gray-500">({archived.length})</span>
+            </h2>
+            <div className="space-y-3 opacity-40">
+              {archived.map(p => <ProjectCard key={p.id} project={p} onUpdate={() => fetchProjects().then(setProjects)} />)}
             </div>
           </>
         )}
