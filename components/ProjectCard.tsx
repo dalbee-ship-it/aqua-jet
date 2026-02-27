@@ -27,26 +27,33 @@ interface Project {
   tasks: Task[]
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  queued: 'text-gray-500',
+const TASK_STATUS_COLOR: Record<string, string> = {
+  queued:  'text-gray-500',
   running: 'text-cyan-400 animate-pulse',
-  done: 'text-green-400',
-  failed: 'text-red-400',
+  done:    'text-green-400',
+  failed:  'text-red-400',
 }
-const STATUS_ICON: Record<string, string> = {
+const TASK_STATUS_ICON: Record<string, string> = {
   queued: '○', running: '▶', done: '✓', failed: '✗',
 }
+const STATUS_BADGE: Record<string, { label: string; color: string }> = {
+  waiting:  { label: '대기',  color: 'bg-gray-500/20 text-gray-400' },
+  active:   { label: '진행',  color: 'bg-cyan-500/20 text-cyan-400' },
+  issue:    { label: '이슈',  color: 'bg-orange-500/20 text-orange-400' },
+  done:     { label: '완료',  color: 'bg-green-500/20 text-green-400' },
+  archived: { label: '보관',  color: 'bg-gray-700/20 text-gray-500' },
+}
 const ACTION_BUTTONS = [
-  { status: 'waiting', label: '대기', color: 'bg-gray-500 hover:bg-gray-400 text-white' },
-  { status: 'active',  label: '진행', color: 'bg-cyan-500 hover:bg-cyan-400 text-black' },
-  { status: 'issue',   label: '이슈', color: 'bg-orange-500 hover:bg-orange-400 text-black' },
-  { status: 'done',    label: '완료', color: 'bg-green-500 hover:bg-green-400 text-black' },
-  { status: 'archived',label: '보관', color: 'bg-gray-700 hover:bg-gray-600 text-white' },
+  { status: 'waiting',  label: '대기', color: 'bg-gray-600 hover:bg-gray-500 text-white' },
+  { status: 'active',   label: '진행', color: 'bg-cyan-500 hover:bg-cyan-400 text-black' },
+  { status: 'issue',    label: '이슈', color: 'bg-orange-500 hover:bg-orange-400 text-black' },
+  { status: 'done',     label: '완료', color: 'bg-green-500 hover:bg-green-400 text-black' },
+  { status: 'archived', label: '보관', color: 'bg-gray-700 hover:bg-gray-600 text-white' },
 ]
-const LOG_TEXT: Record<string, string> = {
-  system: 'text-secondary',
-  agent: 'text-cyan-400',
-  user: 'text-primary',
+const LOG_COLOR: Record<string, string> = {
+  system: 'var(--text-muted)',
+  agent:  '#22d3ee',
+  user:   'var(--text-primary)',
 }
 const LOG_PREFIX: Record<string, string> = { system: '·', agent: '▶', user: '›' }
 
@@ -54,7 +61,14 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
 }
 
-export function ProjectCard({ project, expandedId, onToggle, onUpdate }: { project: Project; expandedId: string | null; onToggle: (id: string | null) => void; onUpdate: () => void }) {
+export function ProjectCard({
+  project, expandedId, onToggle, onUpdate,
+}: {
+  project: Project
+  expandedId: string | null
+  onToggle: (id: string | null) => void
+  onUpdate: () => void
+}) {
   const expanded = expandedId === project.id
   const [hovered, setHovered] = useState(false)
   const [logs, setLogs] = useState<Log[]>([])
@@ -63,6 +77,7 @@ export function ProjectCard({ project, expandedId, onToggle, onUpdate }: { proje
   const [statusLoading, setStatusLoading] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const runningCount = project.tasks.filter(t => t.status === 'running').length
+  const badge = STATUS_BADGE[project.status]
 
   useEffect(() => {
     if (!expanded) return
@@ -74,7 +89,7 @@ export function ProjectCard({ project, expandedId, onToggle, onUpdate }: { proje
       .channel(`log-${project.id}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'logs',
-        filter: `project_id=eq.${project.id}`
+        filter: `project_id=eq.${project.id}`,
       }, payload => setLogs(prev => [...prev, payload.new as Log]))
       .subscribe()
 
@@ -118,57 +133,87 @@ export function ProjectCard({ project, expandedId, onToggle, onUpdate }: { proje
     >
       {/* 카드 헤더 */}
       <div
-        className="p-3 flex gap-3 cursor-pointer select-none"
+        className="p-4 cursor-pointer select-none"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onClick={() => onToggle(expanded ? null : project.id)}
       >
-        <div className="flex-shrink-0 flex items-center">
-          <PokemonSprite
-            pokemonId={project.pokemon_id}
-            progress={project.progress}
-            lastUpdatedAt={project.last_updated_at}
-            size={56}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-center gap-2">
-            <h3 className="text-primary font-bold text-sm truncate">{project.name}</h3>
-            <div className="flex items-center gap-2 flex-shrink-0 ui-sans">
-              {runningCount > 0 && <span className="text-xs text-cyan-400 animate-pulse">{runningCount} running</span>}
-              <span className="text-xs text-muted">{project.progress}%</span>
-              <span className="text-muted text-xs">{expanded ? '▲' : '▼'}</span>
+        <div className="flex gap-4 items-start">
+          {/* 포켓몬 — 크게 */}
+          <div className="flex-shrink-0">
+            <PokemonSprite
+              pokemonId={project.pokemon_id}
+              progress={project.progress}
+              lastUpdatedAt={project.last_updated_at}
+              size={96}
+            />
+          </div>
+
+          {/* 우측 콘텐츠 */}
+          <div className="flex-1 min-w-0 pt-1">
+            {/* 상태 뱃지 + 토글 */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className={`ui-sans text-xs font-semibold px-2 py-0.5 rounded-full ${badge?.color}`}>
+                {badge?.label}
+              </span>
+              <div className="flex items-center gap-2 ui-sans">
+                {runningCount > 0 && (
+                  <span className="text-xs text-cyan-400 animate-pulse">{runningCount} running</span>
+                )}
+                <span className="text-muted text-sm">{expanded ? '▲' : '▼'}</span>
+              </div>
             </div>
+
+            {/* 프로젝트 이름 — 크게 */}
+            <h3 className="font-bold text-primary leading-tight mb-3" style={{ fontSize: '1.15rem' }}>
+              {project.name}
+            </h3>
+
+            {/* 진행도 */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1.5 progress-track rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-cyan-400 rounded-full transition-all duration-700"
+                  style={{ width: `${project.progress}%` }}
+                />
+              </div>
+              <span className="ui-sans text-xs text-muted flex-shrink-0">{project.progress}%</span>
+            </div>
+
+            {/* 태스크 미리보기 — 접힌 상태 */}
+            {!expanded && project.tasks.length > 0 && (
+              <ul className="mt-2.5 space-y-1">
+                {project.tasks.slice(0, 2).map(task => (
+                  <li key={task.id} className="flex items-center gap-1.5 ui-sans" style={{ fontSize: '0.8rem' }}>
+                    <span className={`flex-shrink-0 ${TASK_STATUS_COLOR[task.status]}`}>{TASK_STATUS_ICON[task.status]}</span>
+                    <span className="text-secondary truncate">{task.title}</span>
+                  </li>
+                ))}
+                {project.tasks.length > 2 && (
+                  <li className="text-muted ui-sans" style={{ fontSize: '0.75rem' }}>+{project.tasks.length - 2} more</li>
+                )}
+              </ul>
+            )}
           </div>
-          <div className="mt-1.5 h-1 progress-track rounded-full overflow-hidden">
-            <div className="h-full bg-cyan-400 rounded-full transition-all duration-700" style={{ width: `${project.progress}%` }} />
-          </div>
-          {!expanded && project.tasks.length > 0 && (
-            <ul className="mt-2 space-y-0.5">
-              {project.tasks.slice(0, 2).map(task => (
-                <li key={task.id} className="flex items-center gap-1.5 text-xs ui-sans">
-                  <span className={`flex-shrink-0 ${STATUS_COLOR[task.status]}`}>{STATUS_ICON[task.status]}</span>
-                  <span className="text-secondary truncate">{task.title}</span>
-                </li>
-              ))}
-              {project.tasks.length > 2 && <li className="text-xs text-muted ui-sans">+{project.tasks.length - 2} more</li>}
-            </ul>
-          )}
         </div>
       </div>
 
       {/* 펼쳐진 영역 */}
       {expanded && (
         <div style={{ borderTop: '1px solid var(--border)' }}>
-          {/* 로그 */}
-          <div className="px-4 py-3 space-y-1.5 max-h-52 overflow-y-auto">
+          {/* 로그 타임라인 */}
+          <div className="px-4 py-3 space-y-2 max-h-56 overflow-y-auto">
             {logs.length === 0
               ? <p className="ui-sans text-xs text-muted italic">아직 기록이 없어요.</p>
               : logs.map(log => (
                 <div key={log.id} className="flex items-start gap-2">
-                  <span className={`ui-sans text-xs flex-shrink-0 mt-0.5 ${LOG_TEXT[log.type]}`}>{LOG_PREFIX[log.type]}</span>
+                  <span className="ui-sans text-xs flex-shrink-0 mt-0.5" style={{ color: LOG_COLOR[log.type] }}>
+                    {LOG_PREFIX[log.type]}
+                  </span>
                   <span className="ui-sans text-xs text-muted flex-shrink-0 w-10">{formatTime(log.created_at)}</span>
-                  <span className={`text-sm leading-snug ui-sans ${LOG_TEXT[log.type]}`}>{log.message}</span>
+                  <span className="ui-sans text-sm leading-snug" style={{ color: LOG_COLOR[log.type] }}>
+                    {log.message}
+                  </span>
                 </div>
               ))
             }
@@ -187,18 +232,18 @@ export function ProjectCard({ project, expandedId, onToggle, onUpdate }: { proje
             <button
               type="submit"
               disabled={sending || !input.trim()}
-              className="ui-sans bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-black font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm"
+              className="ui-sans bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-black font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer text-sm"
             >→</button>
           </form>
 
-          {/* 상태 변경 */}
-          <div className="flex gap-1.5 px-4 pb-3">
+          {/* 상태 변경 버튼 */}
+          <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {availableActions.map(action => (
               <button
                 key={action.status}
                 onClick={() => changeStatus(action.status)}
                 disabled={statusLoading !== null}
-                className={`ui-sans text-xs font-semibold px-3 py-1 rounded-md cursor-pointer transition-colors ${action.color} disabled:opacity-50`}
+                className={`ui-sans text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${action.color} disabled:opacity-50`}
               >
                 {statusLoading === action.status ? '...' : action.label}
               </button>
