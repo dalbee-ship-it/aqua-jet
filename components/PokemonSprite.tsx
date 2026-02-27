@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { getEvolutionStage, getActualPokemonId, getSpriteUrl, EGG_SPRITE, isAbandoned } from '@/lib/pokemon'
+import { getEvolutionStage, getActualPokemonId, getSpriteUrl, EGG_SPRITE, isAbandoned, shouldRevealPokemon } from '@/lib/pokemon'
 
 interface Props {
   pokemonId: number   // DB에 저장된 기본형 ID
@@ -12,8 +12,9 @@ interface Props {
 export function PokemonSprite({ pokemonId, progress, lastUpdatedAt, size = 80 }: Props) {
   const stage = getEvolutionStage(progress)
   const abandoned = isAbandoned(lastUpdatedAt)
+  const revealed = shouldRevealPokemon(progress)
   const actualId = getActualPokemonId(pokemonId, progress)
-  const src = stage === 0 ? EGG_SPRITE : getSpriteUrl(actualId)
+  const src = !revealed || stage === 0 ? EGG_SPRITE : getSpriteUrl(actualId)
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>

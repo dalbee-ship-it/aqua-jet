@@ -96,3 +96,8 @@ export async function assignRandomPokemon(usedIds: number[]): Promise<number> {
   if (available.length === 0) throw new Error('모든 기본형 포켓몬이 이미 배정됨')
   return available[Math.floor(Math.random() * available.length)]
 }
+
+// progress=0이면 pokemon_id를 절대 노출하지 않음
+export function shouldRevealPokemon(progress: number): boolean {
+  return progress > 0
+}
