@@ -25,7 +25,19 @@ interface Project {
   pokemon_id: number
   status: string
   last_updated_at: string
+  due_date: string | null
   tasks: Task[]
+}
+
+function formatDue(due: string | null) {
+  if (!due) return null
+  const d = new Date(due)
+  const now = new Date()
+  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  if (diff < 0) return { text: `${Math.abs(diff)}일 초과`, color: 'text-red-400' }
+  if (diff === 0) return { text: '오늘 마감', color: 'text-red-400' }
+  if (diff <= 3) return { text: `D-${diff}`, color: 'text-orange-400' }
+  return { text: `D-${diff}`, color: 'text-muted' }
 }
 
 const TASK_STATUS_COLOR: Record<string, string> = {
@@ -134,9 +146,17 @@ export function ProjectCard({
               </div>
             </div>
 
-            <h3 className="font-bold text-primary leading-tight mb-2" style={{ fontSize: '1rem' }}>
-              {project.name}
-            </h3>
+            <div className="flex items-start justify-between gap-1 mb-2">
+              <h3 className="font-bold text-primary leading-tight" style={{ fontSize: '1rem' }}>
+                {project.name}
+              </h3>
+              {(() => {
+                const due = formatDue(project.due_date)
+                return due ? (
+                  <span className={`ui-sans text-xs flex-shrink-0 mt-0.5 ${due.color}`}>{due.text}</span>
+                ) : null
+              })()}
+            </div>
 
             <div className="flex items-center gap-2">
               <div className="flex-1 h-1.5 progress-track rounded-full overflow-hidden">
@@ -145,28 +165,39 @@ export function ProjectCard({
               <span className="ui-sans text-xs text-muted flex-shrink-0">{project.progress}%</span>
             </div>
 
-            {project.tasks.length > 0 && (
-              <ul className="mt-1.5 space-y-0.5">
-                {(expanded ? project.tasks : project.tasks.slice(0, 2)).map(task => (
-                  <li
-                    key={task.id}
-                    className="flex items-center gap-1.5 ui-sans cursor-pointer group"
-                    style={{ fontSize: '0.75rem' }}
-                    onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
-                  >
-                    <span className={`flex-shrink-0 transition-colors ${task.status === 'done' ? 'text-green-400' : 'text-gray-600 group-hover:text-gray-400'}`}>
-                      {task.status === 'done' ? '✓' : '○'}
-                    </span>
-                    <span className={`truncate transition-colors ${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
-                      {task.title}
-                    </span>
-                  </li>
-                ))}
-                {!expanded && project.tasks.length > 2 && (
-                  <li className="text-muted ui-sans" style={{ fontSize: '0.7rem' }}>+{project.tasks.length - 2} more</li>
-                )}
-              </ul>
-            )}
+            {project.tasks.length > 0 && (() => {
+              // 우선순위: running → queued(최신순) → done
+              const sorted = [...project.tasks].sort((a, b) => {
+                const order = { running: 0, queued: 1, failed: 2, done: 3 }
+                return (order[a.status as keyof typeof order] ?? 9) - (order[b.status as keyof typeof order] ?? 9)
+              })
+              const topTask = sorted[0]
+              const displayTasks = expanded ? sorted : [topTask]
+              const remaining = project.tasks.filter(t => t.status !== 'done').length
+
+              return (
+                <ul className="mt-1.5 space-y-0.5">
+                  {displayTasks.map(task => (
+                    <li
+                      key={task.id}
+                      className="flex items-center gap-1.5 ui-sans cursor-pointer group"
+                      style={{ fontSize: '0.75rem' }}
+                      onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
+                    >
+                      <span className={`flex-shrink-0 transition-colors ${task.status === 'done' ? 'text-green-400' : task.status === 'running' ? 'text-cyan-400 animate-pulse' : 'text-gray-600 group-hover:text-gray-400'}`}>
+                        {task.status === 'done' ? '✓' : task.status === 'running' ? '▶' : '○'}
+                      </span>
+                      <span className={`truncate transition-colors ${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
+                        {task.title}
+                      </span>
+                    </li>
+                  ))}
+                  {!expanded && remaining > 1 && (
+                    <li className="text-muted ui-sans" style={{ fontSize: '0.7rem' }}>+{remaining - 1}개 남음</li>
+                  )}
+                </ul>
+              )
+            })()}
           </div>
         </div>
       </div>
