@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/lib/theme'
 
 export const metadata: Metadata = {
   title: 'Shadowball',
-  description: 'OpenClaw Agent Monitor',
+  description: 'Silent Agent Monitor',
   icons: {
     icon: '/favicon.ico',
     apple: '/icon.png',
