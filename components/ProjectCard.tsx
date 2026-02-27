@@ -57,8 +57,14 @@ const LOG_COLOR: Record<string, string> = {
 }
 const LOG_PREFIX: Record<string, string> = { system: '·', agent: '▶', user: '›' }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+function formatRelativeDate(iso: string) {
+  const d = new Date(iso)
+  const now = new Date()
+  const daysDiff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+  if (daysDiff === 0) return '오늘'
+  if (daysDiff === 1) return '어제'
+  if (daysDiff === 2) return '그저께'
+  return `${daysDiff}일 전`
 }
 
 export function ProjectCard({
@@ -180,14 +186,25 @@ export function ProjectCard({
                   {displayTasks.map(task => (
                     <li
                       key={task.id}
-                      className="flex items-center gap-1.5 ui-sans cursor-pointer group"
+                      className="flex items-center gap-1.5 ui-sans"
                       style={{ fontSize: '0.75rem' }}
-                      onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
                     >
-                      <span className={`flex-shrink-0 transition-colors ${task.status === 'done' ? 'text-green-400' : task.status === 'running' ? 'text-cyan-400 animate-pulse' : 'text-gray-600 group-hover:text-gray-400'}`}>
-                        {task.status === 'done' ? '✓' : task.status === 'running' ? '▶' : '○'}
-                      </span>
-                      <span className={`truncate transition-colors ${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
+                      {task.status === 'running' ? (
+                        <span className="flex-shrink-0 text-cyan-400 animate-pulse text-xs">▶</span>
+                      ) : (
+                        <span
+                          className={`flex-shrink-0 inline-flex items-center justify-center rounded-[3px] border transition-colors`}
+                          style={{
+                            width: '12px', height: '12px', fontSize: '9px', lineHeight: 1,
+                            borderColor: task.status === 'done' ? '#4ade80' : 'var(--border-hover)',
+                            background: task.status === 'done' ? '#4ade80' : 'transparent',
+                            color: task.status === 'done' ? '#000' : 'transparent',
+                          }}
+                        >
+                          {task.status === 'done' ? '✓' : ''}
+                        </span>
+                      )}
+                      <span className={`truncate ${task.status === 'done' ? 'text-muted line-through' : 'text-secondary'}`}>
                         {task.title}
                       </span>
                     </li>
@@ -209,17 +226,37 @@ export function ProjectCard({
           <div className="px-4 py-3 space-y-2 max-h-56 overflow-y-auto">
             {logs.length === 0
               ? <p className="ui-sans text-xs text-muted italic">아직 기록이 없어요.</p>
-              : logs.map(log => (
-                <div key={log.id} className="flex items-start gap-2">
-                  <span className="ui-sans text-xs flex-shrink-0 mt-0.5" style={{ color: LOG_COLOR[log.type] }}>
-                    {LOG_PREFIX[log.type]}
-                  </span>
-                  <span className="ui-sans text-xs text-muted flex-shrink-0 w-10">{formatTime(log.created_at)}</span>
-                  <span className="ui-sans text-sm leading-snug" style={{ color: LOG_COLOR[log.type] }}>
-                    {log.message}
-                  </span>
-                </div>
-              ))
+              : (() => {
+                  // 날짜 그룹핑
+                  const groups: { label: string; items: Log[] }[] = []
+                  let lastLabel = ''
+                  for (const log of logs) {
+                    const label = formatRelativeDate(log.created_at)
+                    if (label !== lastLabel) {
+                      groups.push({ label, items: [log] })
+                      lastLabel = label
+                    } else {
+                      groups[groups.length - 1].items.push(log)
+                    }
+                  }
+                  return groups.map(g => (
+                    <div key={g.label}>
+                      <div className="ui-sans text-xs text-muted mb-1 mt-2 first:mt-0 select-none" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
+                        — {g.label}
+                      </div>
+                      {g.items.map(log => (
+                        <div key={log.id} className="flex items-start gap-2 mb-1">
+                          <span className="ui-sans text-xs flex-shrink-0 mt-0.5" style={{ color: LOG_COLOR[log.type] }}>
+                            {LOG_PREFIX[log.type]}
+                          </span>
+                          <span className="ui-sans text-sm leading-snug" style={{ color: LOG_COLOR[log.type] }}>
+                            {log.message}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                })()
             }
             <div ref={bottomRef} />
           </div>
