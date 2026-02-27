@@ -90,9 +90,9 @@ export function ProjectCard({
         onMouseLeave={() => setHovered(false)}
         onClick={() => onToggle(expanded ? null : project.id)}
       >
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-start">
           {/* 포켓몬 */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" style={{ transition: 'transform 0.3s ease' }}>
             <PokemonSprite
               pokemonId={project.pokemon_id}
               progress={project.progress}

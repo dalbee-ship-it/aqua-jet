@@ -1,5 +1,6 @@
 'use client'
 import Image from 'next/image'
+import { useTheme } from '@/lib/theme'
 import { getEvolutionStage, getActualPokemonId, getSpriteUrl, EGG_SPRITE, isAbandoned, shouldRevealPokemon } from '@/lib/pokemon'
 
 interface Props {
@@ -10,11 +11,14 @@ interface Props {
 }
 
 export function PokemonSprite({ pokemonId, progress, lastUpdatedAt, size = 80 }: Props) {
+  const { theme } = useTheme()
   const stage = getEvolutionStage(progress)
   const abandoned = isAbandoned(lastUpdatedAt)
   const revealed = shouldRevealPokemon(progress)
   const actualId = getActualPokemonId(pokemonId, progress)
   const src = !revealed || stage === 0 ? EGG_SPRITE : getSpriteUrl(actualId)
+  const cardBg = theme === 'dark' ? '#111827' : '#ffffff'
+  const outline = `drop-shadow(1px 0 0 ${cardBg}) drop-shadow(-1px 0 0 ${cardBg}) drop-shadow(0 1px 0 ${cardBg}) drop-shadow(0 -1px 0 ${cardBg})`
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -24,10 +28,7 @@ export function PokemonSprite({ pokemonId, progress, lastUpdatedAt, size = 80 }:
           alt={`pokemon-${actualId}`}
           width={size}
           height={size}
-          style={{
-            imageRendering: 'pixelated',
-            filter: 'drop-shadow(1px 0 0 var(--bg-card)) drop-shadow(-1px 0 0 var(--bg-card)) drop-shadow(0 1px 0 var(--bg-card)) drop-shadow(0 -1px 0 var(--bg-card))',
-          }}
+          style={{ imageRendering: 'pixelated', filter: outline }}
           unoptimized
         />
       </div>
