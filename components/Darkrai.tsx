@@ -10,8 +10,18 @@ export function DarkraiHeader() {
         style={{ imageRendering: 'pixelated' }}
       />
       <div>
-        <h1 className="text-xl font-bold text-white tracking-widest">SHADOWBALL</h1>
-        <p className="text-xs text-gray-500 mt-0.5 italic">OpenClaw Agent Monitor</p>
+        <h1
+          className="font-bold text-white"
+          style={{
+            fontSize: '2rem',
+            letterSpacing: '0.25em',
+            transform: 'scaleY(0.6)',
+            transformOrigin: 'left center',
+            display: 'inline-block',
+            lineHeight: 1,
+          }}
+        >SHADOWBALL</h1>
+        <p className="text-xs text-gray-500 mt-1 italic tracking-widest">OpenClaw Agent Monitor</p>
       </div>
     </header>
   )
