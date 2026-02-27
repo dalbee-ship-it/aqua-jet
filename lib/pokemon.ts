@@ -1,90 +1,53 @@
-// Gen 1 기본형 (진화 없거나 진화 전 단계)만 배정
-// 2단진화: 이상해씨(1), 파이리(4), 꼬부기(7), 캐터피(10), 뿔충이(13), 구구(16), 니드란♀(29), 니드란♂(32), 식스테일(37), 푸린(39), 주뱃(41), 디그다(50), 가디(58), 망나뇽의 미뇽(147→148→149 미뇽이 기본), 잉어킹(129)
-// 1단진화: 아라리(27), 모래두지(28 X — 2단), 꼬렛(19), 까마귀(21)...
-// 단일진화 없음: 루주라(124), 캥카(115), 파라스(46→47 2단), 왕눈해(120→121)
-// → 정의: 진화를 앞으로 할 수 있는 포켓몬 중 가장 초기 단계
-const BASE_FORMS = [
-  1,   // 이상해씨
-  4,   // 파이리
-  7,   // 꼬부기
-  10,  // 캐터피
-  13,  // 뿔충이
-  16,  // 구구
-  19,  // 꼬렛
-  21,  // 깨비참
-  23,  // 아보
-  27,  // 모래두지
-  29,  // 니드란♀
-  32,  // 니드란♂
-  35,  // 삐삐
-  37,  // 식스테일
-  39,  // 푸린
-  41,  // 주뱃
-  43,  // 뚜벅초
-  46,  // 파라스
-  48,  // 콘팡
-  50,  // 디그다
-  52,  // 나옹
-  54,  // 고라파덕
-  56,  // 망키
-  58,  // 가디
-  60,  // 발챙이
-  63,  // 케이시 (후딘)
-  66,  // 알통몬
-  69,  // 모다피
-  72,  // 왕눈해(단일) — 72는 왕눈해, 73은 독침붕 → 73도 진화형이므로 72만
-  74,  // 꼬마돌
-  77,  // 포니타
-  79,  // 야돈
-  81,  // 코일
-  84,  // 두두
-  86,  // 쥬쥬
-  88,  // 질퍽이
-  90,  // 셀러
-  92,  // 고오스
-  95,  // 롱스톤 (단일)
-  96,  // 슬리프
-  98,  // 크랩
-  100, // 찌리리공
-  102, // 아라리
-  104, // 탕탕이
-  108, // 내루미 (단일)
-  109, // 독독이
-  111, // 뿔카노
-  113, // 럭키 (단일)
-  114, // 덩쿠리 (단일)
-  115, // 캥카 (단일)
-  116, // 쏙독어
-  118, // 콘치
-  120, // 별가사리
-  122, // 마임맨 (단일)
-  123, // 스라크 (단일)
-  124, // 루주라 (단일)
-  125, // 에레브 (단일, Gen1)
-  126, // 마그마 (단일, Gen1)
-  127, // 쁘사이저 (단일)
-  128, // 켄타로스 (단일)
-  129, // 잉어킹
-  131, // 라프라스 (단일)
-  132, // 메타몽 (단일)
-  133, // 이브이
-  138, // 암나이트
-  140, // 투구
-  143, // 잠만보 (단일)
-  147, // 미뇽
+// Gen 1 기본형만 배정 (진화 전 단계)
+export const BASE_FORMS = [
+  1,4,7,10,13,16,19,21,23,27,29,32,35,37,39,41,43,46,48,
+  50,52,54,56,58,60,63,66,69,72,74,77,79,81,84,86,88,90,
+  92,96,98,100,102,104,109,111,116,118,120,129,133,138,140,147,
 ]
 
-export async function assignRandomPokemon(usedIds: number[]): Promise<number> {
-  const available = BASE_FORMS.filter(id => !usedIds.includes(id))
-  if (available.length === 0) throw new Error('모든 기본형 포켓몬이 이미 배정됨')
-  return available[Math.floor(Math.random() * available.length)]
+// PokeAPI 진화 체인 (base_id → [stage0, stage1, stage2, ...])
+// 이브이(133)는 4가지 진화형 → 진행도별로 순서대로
+const EVO_CHAIN: Record<number, number[]> = {
+  1:[1,2,3], 4:[4,5,6], 7:[7,8,9], 10:[10,11,12], 13:[13,14,15],
+  16:[16,17,18], 19:[19,20], 21:[21,22], 23:[23,24], 27:[27,28],
+  29:[29,30,31], 32:[32,33,34], 35:[35,36], 37:[37,38], 39:[39,40],
+  41:[41,42], 43:[43,44,45], 46:[46,47], 48:[48,49], 50:[50,51],
+  52:[52,53], 54:[54,55], 56:[56,57], 58:[58,59], 60:[60,61,62],
+  63:[63,64,65], 66:[66,67,68], 69:[69,70,71], 72:[72,73], 74:[74,75,76],
+  77:[77,78], 79:[79,80], 81:[81,82], 84:[84,85], 86:[86,87],
+  88:[88,89], 90:[90,91], 92:[92,93,94], 96:[96,97], 98:[98,99],
+  100:[100,101], 102:[102,103], 104:[104,105], 109:[109,110], 111:[111,112],
+  116:[116,117], 118:[118,119], 120:[120,121], 129:[129,130],
+  133:[133,134,135,136], 138:[138,139], 140:[140,141], 147:[147,148,149],
 }
 
+// 단일 진화 없는 포켓몬 (항상 같은 스프라이트)
+// 95 롱스톤, 108 내루미, 113 럭키, 114 덩쿠리, 115 캥카, 122 마임맨,
+// 123 스라크, 124 루주라, 125 에레브, 126 마그마, 127 쁘사이저, 128 켄타로스,
+// 131 라프라스, 132 메타몽 등 — 이미 BASE_FORMS에서 제외됨
+
 export function getEvolutionStage(progress: number): 0 | 1 | 2 | 3 {
-  if (progress === 0) return 0
-  if (progress < 50) return 1
-  if (progress < 100) return 2
-  return 3
+  if (progress === 0) return 0       // 알
+  if (progress < 40) return 1        // 기본형
+  if (progress < 80) return 2        // 1차 진화
+  return 3                           // 최종 진화 (100% 완료)
+}
+
+/**
+ * 진행도에 맞는 실제 포켓몬 ID 반환
+ * progress 0 → 알, 1~39 → 기본형, 40~79 → 1차진화, 80+ → 최종진화
+ */
+export function getActualPokemonId(basePokemonId: number, progress: number): number {
+  const stage = getEvolutionStage(progress)
+  if (stage === 0) return basePokemonId // 알 상태에서는 ID 무관
+
+  const chain = EVO_CHAIN[basePokemonId]
+  if (!chain) return basePokemonId
+
+  // stage 1 → chain[0], stage 2 → chain[1] (없으면 마지막), stage 3 → chain[마지막]
+  if (stage === 1) return chain[0]
+  if (stage === 2) return chain[Math.min(1, chain.length - 1)]
+  return chain[chain.length - 1]
 }
 
 export function getSpriteUrl(pokemonId: number): string {
@@ -95,4 +58,10 @@ export const EGG_SPRITE = `https://raw.githubusercontent.com/PokeAPI/sprites/mas
 
 export function isAbandoned(lastUpdatedAt: string): boolean {
   return Date.now() - new Date(lastUpdatedAt).getTime() > 14 * 24 * 60 * 60 * 1000
+}
+
+export async function assignRandomPokemon(usedIds: number[]): Promise<number> {
+  const available = BASE_FORMS.filter(id => !usedIds.includes(id))
+  if (available.length === 0) throw new Error('모든 기본형 포켓몬이 이미 배정됨')
+  return available[Math.floor(Math.random() * available.length)]
 }
