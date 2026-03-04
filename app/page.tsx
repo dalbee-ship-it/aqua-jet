@@ -119,7 +119,7 @@ export default function Dashboard() {
             {tab === 'archived' && '보관된 프로젝트가 없어요.'}
           </p>
         ) : (
-          <div className="space-y-3" style={{ opacity: tab === 'archived' ? 0.5 : 1 }}>
+          <div className="space-y-3 pb-20" style={{ opacity: tab === 'archived' ? 0.5 : 1 }}>
             {current.map(p => (
               <ProjectCard
                 key={p.id}
@@ -134,13 +134,19 @@ export default function Dashboard() {
 
       </div>
       {/* FAB — 우측 하단 고정 */}
-      <button
-        className="ui-sans fixed bottom-6 right-6 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-black font-bold px-5 py-3 rounded-full shadow-lg transition-colors cursor-pointer text-sm z-50 opacity-50 cursor-not-allowed"
-        disabled
-        title="텔레그램으로 새 프로젝트 추가"
-      >
-        + New Project
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-1">
+        <span className="ui-sans text-xs text-muted bg-[var(--bg-card)] px-2 py-1 rounded-md border border-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none select-none hidden sm:block"
+          style={{ fontSize: '0.65rem' }}>
+          텔레그램에서 추가
+        </span>
+        <button
+          className="ui-sans bg-cyan-500/30 text-cyan-400 font-bold px-5 py-3 rounded-full shadow-lg text-sm cursor-default group relative"
+          disabled
+          title="프로젝트는 텔레그램 새벽이를 통해 추가됩니다"
+        >
+          + New Project
+        </button>
+      </div>
     </main>
   )
 }

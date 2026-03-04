@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 
 // 클라이언트용 (브라우저 — anon key)
 export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim()
 )
 
 // 서버용 (API 라우트 — service_role key)

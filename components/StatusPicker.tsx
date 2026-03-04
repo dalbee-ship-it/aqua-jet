@@ -44,13 +44,20 @@ export function StatusPicker({ current, onChange }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
-  // 외부 클릭 시 닫기
+  // 외부 클릭 + ESC 시 닫기
   useEffect(() => {
-    function handler(e: MouseEvent) {
+    function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [])
 
   async function select(status: string) {

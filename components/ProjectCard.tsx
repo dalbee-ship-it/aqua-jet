@@ -32,6 +32,10 @@ function formatDue(due: string | null) {
   return { text: `D-${diff}`, color: 'text-muted' }
 }
 
+function shouldShowDue(status: string) {
+  return !['done', 'archived'].includes(status)
+}
+
 
 
 export function ProjectCard({
@@ -113,6 +117,7 @@ export function ProjectCard({
                 {project.name}
               </h3>
               {(() => {
+                if (!shouldShowDue(project.status)) return null
                 const due = formatDue(project.due_date)
                 return due ? (
                   <span className={`ui-sans text-xs flex-shrink-0 mt-0.5 ${due.color}`}>{due.text}</span>
